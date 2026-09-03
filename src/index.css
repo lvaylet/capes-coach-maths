@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* Styles personnalisés pour le confort de lecture mathématique */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
