@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
-import { X, Key, Cpu, MessageSquare, Eye, EyeOff, Save, Check } from 'lucide-react';
-import type { ParametresCandidat } from '../types/domain';
+import React, { useState } from "react";
+import {
+  X,
+  Key,
+  Cpu,
+  MessageSquare,
+  Eye,
+  EyeOff,
+  Save,
+  Check,
+} from "lucide-react";
+import type { ParametresCandidat } from "../types/domain";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,8 +25,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSave,
 }) => {
   const [cleApi, setCleApi] = useState(parametres.cleApiGemini);
-  const [modele, setModele] = useState(parametres.modeleGemini || 'gemini-2.5-flash');
-  const [consignes, setConsignes] = useState(parametres.consignesPersonnalisees || '');
+  const [modele, setModele] = useState(
+    parametres.modeleGemini || "gemini-2.5-flash"
+  );
+  const [consignes, setConsignes] = useState(
+    parametres.consignesPersonnalisees || ""
+  );
   const [showKey, setShowKey] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -44,7 +57,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <h3 className="font-bold text-slate-800 flex items-center gap-2 text-base">
             <Key className="w-5 h-5 text-indigo-600" />
-            Réglages de l'Assistant & API
+            Réglages du Candidat & API
           </h3>
           <button
             type="button"
@@ -64,7 +77,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </label>
             <div className="relative flex items-center">
               <input
-                type={showKey ? 'text' : 'password'}
+                type={showKey ? "text" : "password"}
                 value={cleApi}
                 onChange={(e) => setCleApi(e.target.value)}
                 placeholder="Collez votre clé API Gemini (AIza...)"
@@ -76,11 +89,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClick={() => setShowKey(!showKey)}
                 className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showKey ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
             <p className="text-[11px] text-slate-500 mt-1.5">
-              Votre clé est stockée uniquement en local sur votre appareil (navigateur). Obtenez une clé gratuitement sur{' '}
+              Votre clé est stockée uniquement en local sur votre appareil
+              (navigateur). Obtenez une clé gratuitement sur{" "}
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
@@ -97,7 +115,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5 text-indigo-600" />
-              Modèle d'IA Multimodal
+              Modèle de l'Examinateur (Gemini)
             </label>
             <input
               type="text"
@@ -107,16 +125,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-mono"
             />
             <div className="flex gap-2 mt-1.5">
-              {['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'].map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setModele(m)}
-                  className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-mono cursor-pointer border border-slate-200"
-                >
-                  {m}
-                </button>
-              ))}
+              {["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"].map(
+                (m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setModele(m)}
+                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-mono cursor-pointer border border-slate-200"
+                  >
+                    {m}
+                  </button>
+                )
+              )}
             </div>
           </div>
 

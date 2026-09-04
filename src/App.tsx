@@ -20,26 +20,11 @@ import { ReportViewer } from "./components/ReportViewer";
 import { RemediationChat } from "./components/RemediationChat";
 import { SettingsModal } from "./components/SettingsModal";
 import { HistoryDrawer } from "./components/HistoryDrawer";
-
-const STORAGE_KEY_PARAMETRES = "capes_maths_parametres";
+import { useParametresCandidat } from "./parametres";
 
 export const App: React.FC = () => {
-  // Paramètres du candidat (clé API, modèle, consignes)
-  const [parametres, setParametres] = useState<ParametresCandidat>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_PARAMETRES);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // Ignorer
-      }
-    }
-    return {
-      cleApiGemini: "",
-      modeleGemini: "gemini-2.5-flash",
-      consignesPersonnalisees: "",
-    };
-  });
+  // Paramètres du candidat (clé API, modèle, consignes) gérés par le seam ParametresRepository
+  const { parametres, mettreAJourParametres } = useParametresCandidat();
 
   // Instance de l'examinateur du jury (seam Ports & Adapters)
   const examinateur: ExaminateurJury = useMemo(
@@ -59,11 +44,7 @@ export const App: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
 
   const handleSaveSettings = (nouveauxParametres: ParametresCandidat) => {
-    setParametres(nouveauxParametres);
-    localStorage.setItem(
-      STORAGE_KEY_PARAMETRES,
-      JSON.stringify(nouveauxParametres)
-    );
+    mettreAJourParametres(nouveauxParametres);
     session.effacerErreur();
   };
 
