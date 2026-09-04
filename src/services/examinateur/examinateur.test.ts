@@ -169,4 +169,25 @@ En espérant que ce retour vous soit utile pour le concours.
       expect(examinateur).toBeInstanceOf(GeminiExaminateurAdapter);
     });
   });
+
+  describe("GeminiExaminateurAdapter (geminiAdapter.ts)", () => {
+    it("doit refuser l'instanciation sans clé API", () => {
+      expect(() => new GeminiExaminateurAdapter("")).toThrow(
+        "Une clé API Gemini est requise"
+      );
+    });
+
+    it("doit refuser d'évaluer si aucune page de copie n'est fournie", async () => {
+      const adapter = new GeminiExaminateurAdapter("fake-key");
+      await expect(
+        adapter.evaluerCopie({
+          epreuve: "epreuve-1",
+          enoncePages: [],
+          copiePages: [],
+        })
+      ).rejects.toThrow(
+        "Veuillez fournir au moins une photo de votre copie manuscrite."
+      );
+    });
+  });
 });

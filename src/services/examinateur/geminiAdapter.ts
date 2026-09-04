@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 import type { RapportDeCorrection } from "../../types/domain";
-import { pivoterEtCompresserImage, blobToBase64 } from "../../utils/image";
+import { type ImageIngestionPipeline, imagePipeline } from "../../utils/image";
 import type {
   ExaminateurJury,
   OptionsEvaluation,
@@ -23,7 +23,8 @@ export class GeminiExaminateurAdapter implements ExaminateurJury {
 
   constructor(
     cleApi: string,
-    private modele: string = DEFAULT_MODEL
+    private modele: string = DEFAULT_MODEL,
+    private pipeline: ImageIngestionPipeline = imagePipeline
   ) {
     if (!cleApi) {
       throw new Error(
@@ -66,16 +67,12 @@ export class GeminiExaminateurAdapter implements ExaminateurJury {
     // Encodage des pages d'énoncé
     for (let i = 0; i < enoncePages.length; i++) {
       const page = enoncePages[i];
-      const blobTraite = await pivoterEtCompresserImage(
-        page.blob,
-        page.rotation
-      );
-      const base64 = await blobToBase64(blobTraite);
+      const imageApi = await this.pipeline.preparerPourApi(page);
       parts.push({ text: `[ÉNONCÉ - Page ${i + 1}/${enoncePages.length}]` });
       parts.push({
         inlineData: {
-          mimeType: "image/jpeg",
-          data: base64,
+          mimeType: imageApi.mimeType,
+          data: imageApi.data,
         },
       });
     }
@@ -83,18 +80,14 @@ export class GeminiExaminateurAdapter implements ExaminateurJury {
     // Encodage des pages de copie manuscrite
     for (let i = 0; i < copiePages.length; i++) {
       const page = copiePages[i];
-      const blobTraite = await pivoterEtCompresserImage(
-        page.blob,
-        page.rotation
-      );
-      const base64 = await blobToBase64(blobTraite);
+      const imageApi = await this.pipeline.preparerPourApi(page);
       parts.push({
         text: `[COPIE MANUSCRITE DU CANDIDAT - Page ${i + 1}/${copiePages.length}]`,
       });
       parts.push({
         inlineData: {
-          mimeType: "image/jpeg",
-          data: base64,
+          mimeType: imageApi.mimeType,
+          data: imageApi.data,
         },
       });
     }

@@ -1,6 +1,16 @@
-import React, { useRef } from 'react';
-import { RotateCw, Trash2, ArrowLeft, ArrowRight, Camera, Upload, FileText } from 'lucide-react';
-import type { PageImage } from '../types/domain';
+import React, { useRef, useState } from "react";
+import {
+  RotateCw,
+  Trash2,
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  Upload,
+  FileText,
+  AlertCircle,
+} from "lucide-react";
+import type { PageImage } from "../types/domain";
+import { imagePipeline } from "../utils/image";
 
 interface ImageUploaderProps {
   label: string;
@@ -18,54 +28,68 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   pages,
   onPagesChange,
   allowTextInput = false,
-  texteOptionnel = '',
+  texteOptionnel = "",
   onTexteChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [erreurValidation, setErreurValidation] = useState<string | null>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
-    const newFiles = Array.from(e.target.files);
-    const newPages: PageImage[] = newFiles.map((file, index) => ({
-      id: crypto.randomUUID(),
-      blob: file,
-      previewUrl: URL.createObjectURL(file),
-      nomFichier: file.name,
-      rotation: 0,
-      ordre: pages.length + index,
-    }));
+    const files = Array.from(e.target.files);
+    setErreurValidation(null);
 
-    onPagesChange([...pages, ...newPages]);
-    e.target.value = '';
+    const fichiersValides: File[] = [];
+    for (const file of files) {
+      const validation = imagePipeline.validerFichier(file);
+      if (!validation.valide) {
+        setErreurValidation(validation.erreur);
+      } else {
+        fichiersValides.push(file);
+      }
+    }
+
+    if (fichiersValides.length > 0) {
+      try {
+        const newPages = await imagePipeline.ingererFichiers(
+          fichiersValides,
+          pages.length
+        );
+        onPagesChange([...pages, ...newPages]);
+      } catch (err) {
+        setErreurValidation((err as Error).message);
+      }
+    }
+
+    e.target.value = "";
   };
 
   const pivoterPage = (id: string) => {
     onPagesChange(
-      pages.map((p) => {
-        if (p.id === id) {
-          return { ...p, rotation: (p.rotation + 90) % 360 };
-        }
-        return p;
-      })
+      pages.map((p) => (p.id === id ? imagePipeline.pivoterPage(p) : p))
     );
   };
 
   const supprimerPage = (id: string) => {
+    const pageASupprimer = pages.find((p) => p.id === id);
+    if (pageASupprimer) {
+      imagePipeline.libererPage(pageASupprimer);
+    }
     const filtered = pages.filter((p) => p.id !== id);
     onPagesChange(filtered.map((p, idx) => ({ ...p, ordre: idx })));
   };
 
-  const deplacerPage = (index: number, direction: 'gauche' | 'droite') => {
+  const deplacerPage = (index: number, direction: "gauche" | "droite") => {
     if (
-      (direction === 'gauche' && index === 0) ||
-      (direction === 'droite' && index === pages.length - 1)
+      (direction === "gauche" && index === 0) ||
+      (direction === "droite" && index === pages.length - 1)
     ) {
       return;
     }
 
-    const targetIndex = direction === 'gauche' ? index - 1 : index + 1;
+    const targetIndex = direction === "gauche" ? index - 1 : index + 1;
     const reordered = [...pages];
     const temp = reordered[index];
     reordered[index] = reordered[targetIndex];
@@ -82,7 +106,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           <p className="text-sm text-slate-500">{description}</p>
         </div>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-          {pages.length} {pages.length > 1 ? 'pages' : 'page'}
+          {pages.length} {pages.length > 1 ? "pages" : "page"}
         </span>
       </div>
 
@@ -109,7 +133,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,.pdf"
+          accept="image/jpeg,image/png,image/webp,image/*"
           multiple
           onChange={handleFileSelect}
           className="hidden"
@@ -117,12 +141,30 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         <input
           ref={cameraInputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/*"
           capture="environment"
           onChange={handleFileSelect}
           className="hidden"
         />
       </div>
+
+      {/* Message d'erreur de validation (formats non supportés, ex: PDF) */}
+      {erreurValidation && (
+        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 flex justify-between items-start">
+            <span>{erreurValidation}</span>
+            <button
+              type="button"
+              onClick={() => setErreurValidation(null)}
+              className="text-amber-700 hover:text-amber-900 font-bold ml-2 cursor-pointer"
+              title="Fermer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Galerie des vignettes de pages avec contrôles de rotation */}
       {pages.length > 0 ? (
@@ -153,7 +195,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                   <button
                     type="button"
                     disabled={idx === 0}
-                    onClick={() => deplacerPage(idx, 'gauche')}
+                    onClick={() => deplacerPage(idx, "gauche")}
                     title="Déplacer vers la gauche"
                     className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 cursor-pointer"
                   >
@@ -162,7 +204,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                   <button
                     type="button"
                     disabled={idx === pages.length - 1}
-                    onClick={() => deplacerPage(idx, 'droite')}
+                    onClick={() => deplacerPage(idx, "droite")}
                     title="Déplacer vers la droite"
                     className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 cursor-pointer"
                   >
