@@ -8,6 +8,10 @@ Application d'entraînement et d'évaluation pour les candidats au CAPES de Math
 La personne préparant le concours qui soumet ses travaux pour évaluation.
 _Avoid_: Utilisateur, élève, étudiant
 
+**Examinateur**:
+L'entité incarnant le membre intransigeant du jury officiel du CAPES de Mathématiques, chargée de produire le rapport de correction et d'animer la remédiation.
+_Avoid_: IA, bot, tuteur, assistant, agent
+
 **Énoncé**:
 Le document source (problème ou exercice) définissant le travail mathématique à réaliser.
 _Avoid_: Sujet, devoir, problème

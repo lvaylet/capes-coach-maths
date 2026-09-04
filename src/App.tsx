@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   GraduationCap,
   Settings,
@@ -7,29 +7,29 @@ import {
   Send,
   Loader2,
   AlertCircle,
-} from 'lucide-react';
+} from "lucide-react";
 import type {
   SessionDEntrainement,
   ParametresCandidat,
   DomaineMathematique,
   Epreuve,
   PageImage,
-} from './types/domain';
+} from "./types/domain";
 import {
   sauvegarderSession,
   chargerSession,
   listerSessions,
   supprimerSession,
   type StoredSessionRecord,
-} from './db/db';
-import { evaluerCopie, poserQuestionRemediation } from './services/gemini';
-import { ImageUploader } from './components/ImageUploader';
-import { ReportViewer } from './components/ReportViewer';
-import { RemediationChat } from './components/RemediationChat';
-import { SettingsModal } from './components/SettingsModal';
-import { HistoryDrawer } from './components/HistoryDrawer';
+} from "./db/db";
+import { creerExaminateur, type ExaminateurJury } from "./services/examinateur";
+import { ImageUploader } from "./components/ImageUploader";
+import { ReportViewer } from "./components/ReportViewer";
+import { RemediationChat } from "./components/RemediationChat";
+import { SettingsModal } from "./components/SettingsModal";
+import { HistoryDrawer } from "./components/HistoryDrawer";
 
-const STORAGE_KEY_PARAMETRES = 'capes_maths_parametres';
+const STORAGE_KEY_PARAMETRES = "capes_maths_parametres";
 
 export const App: React.FC = () => {
   // Paramètres du candidat
@@ -43,25 +43,36 @@ export const App: React.FC = () => {
       }
     }
     return {
-      cleApiGemini: '',
-      modeleGemini: 'gemini-2.5-flash',
-      consignesPersonnalisees: '',
+      cleApiGemini: "",
+      modeleGemini: "gemini-2.5-flash",
+      consignesPersonnalisees: "",
     };
   });
 
+  // Instance de l'examinateur du jury (seam Ports & Adapters)
+  const examinateur: ExaminateurJury = useMemo(
+    () =>
+      creerExaminateur({
+        cleApi: parametres.cleApiGemini,
+        modele: parametres.modeleGemini,
+      }),
+    [parametres.cleApiGemini, parametres.modeleGemini]
+  );
+
   // État de la session courante
   const [sessionId, setSessionId] = useState<string | undefined>();
-  const [titre, setTitre] = useState('Entraînement CAPES');
-  const [domaine, setDomaine] = useState<DomaineMathematique>('Analyse');
-  const [epreuve, setEpreuve] = useState<Epreuve>('epreuve-1');
+  const [titre, setTitre] = useState("Entraînement CAPES");
+  const [domaine, setDomaine] = useState<DomaineMathematique>("Analyse");
+  const [epreuve, setEpreuve] = useState<Epreuve>("epreuve-1");
 
   // Énoncé et Copie
   const [enoncePages, setEnoncePages] = useState<PageImage[]>([]);
-  const [enonceTexte, setEnonceTexte] = useState('');
+  const [enonceTexte, setEnonceTexte] = useState("");
   const [copiePages, setCopiePages] = useState<PageImage[]>([]);
 
   // Résultat et remédiation
-  const [sessionActive, setSessionActive] = useState<SessionDEntrainement | null>(null);
+  const [sessionActive, setSessionActive] =
+    useState<SessionDEntrainement | null>(null);
   const [enEvaluation, setEnEvaluation] = useState(false);
   const [enRemediation, setEnRemediation] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -69,7 +80,9 @@ export const App: React.FC = () => {
   // Modales
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [listeHistorique, setListeHistorique] = useState<StoredSessionRecord[]>([]);
+  const [listeHistorique, setListeHistorique] = useState<StoredSessionRecord[]>(
+    []
+  );
 
   // Charger la liste d'historique au démarrage
   useEffect(() => {
@@ -81,37 +94,36 @@ export const App: React.FC = () => {
       const records = await listerSessions();
       setListeHistorique(records);
     } catch (e) {
-      console.error('Erreur chargement historique :', e);
+      console.error("Erreur chargement historique :", e);
     }
   };
 
   const handleSaveSettings = (nouveauxParametres: ParametresCandidat) => {
     setParametres(nouveauxParametres);
-    localStorage.setItem(STORAGE_KEY_PARAMETRES, JSON.stringify(nouveauxParametres));
+    localStorage.setItem(
+      STORAGE_KEY_PARAMETRES,
+      JSON.stringify(nouveauxParametres)
+    );
     setErreur(null);
   };
 
   const reinitialiserSession = () => {
     setSessionId(undefined);
-    setTitre(`Entraînement ${new Date().toLocaleDateString('fr-FR')}`);
-    setDomaine('Analyse');
-    setEpreuve('epreuve-1');
+    setTitre(`Entraînement ${new Date().toLocaleDateString("fr-FR")}`);
+    setDomaine("Analyse");
+    setEpreuve("epreuve-1");
     setEnoncePages([]);
-    setEnonceTexte('');
+    setEnonceTexte("");
     setCopiePages([]);
     setSessionActive(null);
     setErreur(null);
   };
 
   const handleLancerEvaluation = async () => {
-    if (!parametres.cleApiGemini) {
-      setShowSettings(true);
-      setErreur('Veuillez renseigner votre clé API Google Gemini pour démarrer l\'évaluation.');
-      return;
-    }
-
     if (copiePages.length === 0) {
-      setErreur('Veuillez ajouter au moins une photo de votre copie manuscrite.');
+      setErreur(
+        "Veuillez ajouter au moins une photo de votre copie manuscrite."
+      );
       return;
     }
 
@@ -119,9 +131,7 @@ export const App: React.FC = () => {
     setEnEvaluation(true);
 
     try {
-      const rapport = await evaluerCopie({
-        cleApi: parametres.cleApiGemini,
-        modele: parametres.modeleGemini,
+      const rapport = await examinateur.evaluerCopie({
         epreuve,
         enoncePages,
         enonceTexte,
@@ -131,7 +141,7 @@ export const App: React.FC = () => {
 
       const nouvelleSession: SessionDEntrainement = {
         id: sessionId || crypto.randomUUID(),
-        titre: titre || 'Session sans titre',
+        titre: titre || "Session sans titre",
         dateCreation: new Date().toISOString(),
         domaine,
         epreuve,
@@ -155,7 +165,10 @@ export const App: React.FC = () => {
       setSessionActive(nouvelleSession);
       await actualiserHistorique();
     } catch (err: any) {
-      setErreur(err.message || 'Une erreur est survenue lors de l\'évaluation par Gemini.');
+      setErreur(
+        err.message ||
+          "Une erreur est survenue lors de l'évaluation par le jury."
+      );
     } finally {
       setEnEvaluation(false);
     }
@@ -163,19 +176,18 @@ export const App: React.FC = () => {
 
   const handleEnvoyerRemediation = async (texte: string) => {
     if (!sessionActive || !sessionActive.rapport) return;
-    if (!parametres.cleApiGemini) {
-      setShowSettings(true);
-      return;
-    }
 
     const nouveauMessageCandidat = {
       id: crypto.randomUUID(),
-      auteur: 'candidat' as const,
+      auteur: "candidat" as const,
       date: new Date().toISOString(),
       contenu: texte,
     };
 
-    const historiqueMaj = [...sessionActive.messagesRemediation, nouveauMessageCandidat];
+    const historiqueMaj = [
+      ...sessionActive.messagesRemediation,
+      nouveauMessageCandidat,
+    ];
     setSessionActive({
       ...sessionActive,
       messagesRemediation: historiqueMaj,
@@ -183,17 +195,15 @@ export const App: React.FC = () => {
 
     setEnRemediation(true);
     try {
-      const reponseExaminateur = await poserQuestionRemediation(
-        parametres.cleApiGemini,
-        parametres.modeleGemini,
-        sessionActive.rapport,
-        historiqueMaj,
-        texte
-      );
+      const reponseExaminateur = await examinateur.poserQuestionRemediation({
+        rapport: sessionActive.rapport,
+        historiqueMessages: historiqueMaj,
+        nouvelleQuestion: texte,
+      });
 
       const messageExaminateur = {
         id: crypto.randomUUID(),
-        auteur: 'examinateur' as const,
+        auteur: "examinateur" as const,
         date: new Date().toISOString(),
         contenu: reponseExaminateur,
       };
@@ -208,7 +218,7 @@ export const App: React.FC = () => {
       await sauvegarderSession(sessionFinale);
       await actualiserHistorique();
     } catch (err: any) {
-      setErreur(err.message || 'Erreur lors de la réponse de l\'examinateur.');
+      setErreur(err.message || "Erreur lors de la réponse de l'examinateur.");
     } finally {
       setEnRemediation(false);
     }
@@ -224,12 +234,12 @@ export const App: React.FC = () => {
         setDomaine(loaded.domaine);
         setEpreuve(loaded.epreuve);
         setEnoncePages(loaded.enonce.pages);
-        setEnonceTexte(loaded.enonce.texteOptionnel || '');
+        setEnonceTexte(loaded.enonce.texteOptionnel || "");
         setCopiePages(loaded.copie.pages);
         setErreur(null);
       }
     } catch (e) {
-      console.error('Erreur chargement session :', e);
+      console.error("Erreur chargement session :", e);
     }
   };
 
@@ -292,8 +302,8 @@ export const App: React.FC = () => {
               title="Réglages et clé API"
               className={`p-2 rounded-lg transition-colors cursor-pointer border ${
                 !parametres.cleApiGemini
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                  ? "bg-amber-500/20 text-amber-300 border-amber-400/40 animate-pulse"
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -302,20 +312,22 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Bannière d'alerte si clé API non configurée */}
-      {!parametres.cleApiGemini && (
+      {/* Bannière mode simulation si clé API non configurée */}
+      {examinateur.estModeSimulation && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between">
           <div className="flex items-center gap-2 max-w-5xl mx-auto w-full">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <strong>Configuration requise :</strong> Renseignez votre clé API Gemini personnelle (BYOK) pour pouvoir corriger vos copies.
+              <strong>Mode démonstration (Jury simulé) :</strong> Aucune clé API
+              Gemini renseignée. Les évaluations et réponses du jury sont
+              simulées localement.
             </span>
             <button
               type="button"
               onClick={() => setShowSettings(true)}
               className="ml-auto underline font-semibold text-amber-950 hover:text-amber-700 cursor-pointer whitespace-nowrap"
             >
-              Configurer maintenant
+              Ajouter une clé API Gemini
             </button>
           </div>
         </div>
@@ -364,13 +376,17 @@ export const App: React.FC = () => {
               </label>
               <select
                 value={domaine}
-                onChange={(e) => setDomaine(e.target.value as DomaineMathematique)}
+                onChange={(e) =>
+                  setDomaine(e.target.value as DomaineMathematique)
+                }
                 className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
                 <option value="Analyse">Analyse</option>
                 <option value="Algebre">Algèbre & Géométrie</option>
                 <option value="Geometrie">Géométrie</option>
-                <option value="Probabilites">Probabilités & Statistiques</option>
+                <option value="Probabilites">
+                  Probabilités & Statistiques
+                </option>
                 <option value="Arithmetique">Arithmétique</option>
                 <option value="Autre">Autre</option>
               </select>
@@ -385,9 +401,15 @@ export const App: React.FC = () => {
                 onChange={(e) => setEpreuve(e.target.value as Epreuve)}
                 className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
-                <option value="epreuve-1">Épreuve 1 - Disciplinaire pure (L1-L3)</option>
-                <option value="epreuve-2">Épreuve 2 - Disciplinaire appliquée (Didactique/Lycée)</option>
-                <option value="auto">Détection automatique selon l'énoncé</option>
+                <option value="epreuve-1">
+                  Épreuve 1 - Disciplinaire pure (L1-L3)
+                </option>
+                <option value="epreuve-2">
+                  Épreuve 2 - Disciplinaire appliquée (Didactique/Lycée)
+                </option>
+                <option value="auto">
+                  Détection automatique selon l'énoncé
+                </option>
               </select>
             </div>
           </div>

@@ -1,6 +1,6 @@
 # Prépa CAPES Maths - Correcteur Virtuel du Jury
 
-Application web et mobile (PWA) 100% *local-first*, conçue pour aider les candidats à préparer le **CAPES de Mathématiques**. 
+Application web et mobile (PWA) 100% _local-first_, conçue pour aider les candidats à préparer le **CAPES de Mathématiques**.
 
 Elle permet de photographier ou d'importer un énoncé d'exercice ainsi que sa copie manuscrite, puis de soumettre l'ensemble à l'examinateur virtuel **Google Gemini** incarnant un membre intransigeant du jury officiel du concours.
 
@@ -54,8 +54,8 @@ Elle permet de photographier ou d'importer un énoncé d'exercice ainsi que sa c
 
 L'ingénierie de prompt s'appuie directement sur les attendus des **rapports officiels du jury du CAPES de Mathématiques** récents :
 
-- **Rigueur de la quantification** : toute variable doit être introduite explicitement (*« Soit $x \in \mathbb{R}$ »*). Les variables muettes orphelines sont sanctionnées.
-- **Bannissement des abus de symboles logiques** : l'usage des flèches $\Rightarrow$ ou $\iff$ comme connecteurs de phrases ou puces de paragraphe est proscrit. Une démonstration doit être rédigée avec des phrases complètes (*« Or... »*, *« Puisque... »*, *« On en déduit que... »*).
+- **Rigueur de la quantification** : toute variable doit être introduite explicitement (_« Soit $x \in \mathbb{R}$ »_). Les variables muettes orphelines sont sanctionnées.
+- **Bannissement des abus de symboles logiques** : l'usage des flèches $\Rightarrow$ ou $\iff$ comme connecteurs de phrases ou puces de paragraphe est proscrit. Une démonstration doit être rédigée avec des phrases complètes (_« Or... »_, _« Puisque... »_, _« On en déduit que... »_).
 - **Vérification systématique des hypothèses** : citer un théorème sans prouver au préalable la réunion de toutes ses conditions ne rapporte aucun point.
 - **Sélection du contexte d'épreuve** :
   - **Épreuve 1** : Épreuve disciplinaire pure (niveau universitaire L1-L3, rigueur formelle absolue).
@@ -108,19 +108,19 @@ L'application s'ouvre localement sur `http://localhost:5173`.
 1. Obtenez une clé d'API Google Gemini gratuitement sur [Google AI Studio](https://aistudio.google.com/app/apikey).
 2. Dans l'application, cliquez sur l'icône de roue crantée (⚙️) en haut à droite.
 3. Collez votre clé dans le champ prévu et cliquez sur **Sauvegarder**.
-4. *(Optionnel)* Vous pouvez modifier le modèle (ex: `gemini-2.5-flash`, `gemini-1.5-flash`) ou ajouter des consignes personnalisées au jury.
+4. _(Optionnel)_ Vous pouvez modifier le modèle (ex: `gemini-2.5-flash`, `gemini-1.5-flash`) ou ajouter des consignes personnalisées au jury.
 
 ---
 
 ## Scripts Disponibles
 
-| Commande | Action |
-| :--- | :--- |
-| `npm run dev` | Lance le serveur de développement Vite |
-| `npm run build` | Vérifie les types (`tsc`) et compile le bundle de production optimisé |
-| `npm run preview` | Prévisualise le build de production en local |
-| `npm test` | Exécute la suite de tests unitaires avec Vitest |
-| `npm run test:watch` | Exécute les tests en mode écoute continue |
+| Commande             | Action                                                                |
+| :------------------- | :-------------------------------------------------------------------- |
+| `npm run dev`        | Lance le serveur de développement Vite                                |
+| `npm run build`      | Vérifie les types (`tsc`) et compile le bundle de production optimisé |
+| `npm run preview`    | Prévisualise le build de production en local                          |
+| `npm test`           | Exécute la suite de tests unitaires avec Vitest                       |
+| `npm run test:watch` | Exécute les tests en mode écoute continue                             |
 
 ---
 
@@ -135,7 +135,8 @@ capes-coach-maths/
 ├── docs/
 │   ├── adr/                    # Décisions d'architecture (ADR)
 │   │   ├── 0001-local-first-pwa-architecture.md
-│   │   └── 0002-indexeddb-storage-with-dexie.md
+│   │   ├── 0002-indexeddb-storage-with-dexie.md
+│   │   └── 0003-examinateur-jury-ports-and-adapters.md
 │   └── agents/                 # Conventions pour agents IA
 │       ├── domain.md
 │       ├── issue-tracker.md
@@ -174,6 +175,7 @@ capes-coach-maths/
 
 ## Documentation et Références
 
-- [CONTEXT.md](CONTEXT.md) : Glossaire exhaustif du modèle de domaine (*Candidat*, *Énoncé*, *Copie*, *Rapport de correction*, *Fond*, *Forme*, *Remédiation*, *Rédaction modèle*, etc.).
+- [CONTEXT.md](CONTEXT.md) : Glossaire exhaustif du modèle de domaine (_Candidat_, _Énoncé_, _Copie_, _Rapport de correction_, _Fond_, _Forme_, _Remédiation_, _Rédaction modèle_, etc.).
 - [ADR-0001 : Architecture Local-First](docs/adr/0001-local-first-pwa-architecture.md).
 - [ADR-0002 : Persistance IndexedDB avec Dexie.js](docs/adr/0002-indexeddb-storage-with-dexie.md).
+- [ADR-0003 : Architecture Ports & Adapters pour l'Examinateur](docs/adr/0003-examinateur-jury-ports-and-adapters.md).
