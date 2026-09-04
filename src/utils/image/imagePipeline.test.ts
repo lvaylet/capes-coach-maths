@@ -250,6 +250,77 @@ describe("ImageIngestionPipeline", () => {
     });
   });
 
+  describe("Recadrage des pages", () => {
+    let originalRevoke: typeof URL.revokeObjectURL;
+
+    beforeEach(() => {
+      originalRevoke = URL.revokeObjectURL;
+    });
+
+    afterEach(() => {
+      URL.revokeObjectURL = originalRevoke;
+    });
+
+    it("délègue le recadrage et la rotation au CanvasProcessor, révoque l'ancien previewUrl et réinitialise la rotation à 0", async () => {
+      const revokeMock = vi.fn();
+      URL.revokeObjectURL = revokeMock;
+
+      const initialBlob = new Blob(["initial-bytes"], { type: "image/jpeg" });
+      const page: PageImage = {
+        id: "p1",
+        blob: initialBlob,
+        previewUrl: "blob:http://localhost:5173/ancien-uuid",
+        nomFichier: "page1.jpg",
+        rotation: 90,
+        ordre: 1,
+      };
+
+      const recadrage = { x: 0.1, y: 0.2, width: 0.8, height: 0.7 };
+      const pageRecadree = await pipeline.recadrerPage(page, recadrage, 180);
+
+      // Vérifie la révocation de l'ancienne Object URL
+      expect(revokeMock).toHaveBeenCalledWith(
+        "blob:http://localhost:5173/ancien-uuid"
+      );
+
+      // Vérifie l'appel au CanvasProcessor
+      expect(mockCanvas.appelsRecadrerEtPivoter).toHaveLength(1);
+      expect(mockCanvas.appelsRecadrerEtPivoter[0]).toEqual({
+        blob: initialBlob,
+        recadrage,
+        angleDegres: 180,
+        options: undefined,
+      });
+
+      // Vérifie les propriétés du résultat
+      expect(pageRecadree.id).toBe("p1");
+      expect(pageRecadree.nomFichier).toBe("page1.jpg");
+      expect(pageRecadree.ordre).toBe(1);
+      expect(pageRecadree.rotation).toBe(0);
+      expect(pageRecadree.previewUrl).toBeDefined();
+      expect(pageRecadree.previewUrl).not.toBe(
+        "blob:http://localhost:5173/ancien-uuid"
+      );
+    });
+
+    it("utilise la rotation actuelle de la page si aucun nouvel angle n'est précisé", async () => {
+      const page: PageImage = {
+        id: "p2",
+        blob: new Blob(["bytes"]),
+        previewUrl: "blob:url",
+        nomFichier: "page2.jpg",
+        rotation: 270,
+        ordre: 0,
+      };
+
+      const recadrage = { x: 0, y: 0, width: 1, height: 1 };
+      await pipeline.recadrerPage(page, recadrage);
+
+      expect(mockCanvas.appelsRecadrerEtPivoter).toHaveLength(1);
+      expect(mockCanvas.appelsRecadrerEtPivoter[0].angleDegres).toBe(270);
+    });
+  });
+
   describe("Préparation pour l’API de l’examinateur", () => {
     it("délègue le traitement graphique et l’encodage Base64 au CanvasProcessor", async () => {
       const blob = new Blob(["sample-image"], { type: "image/jpeg" });

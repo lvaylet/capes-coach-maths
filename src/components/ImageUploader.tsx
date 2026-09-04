@@ -8,9 +8,11 @@ import {
   Upload,
   FileText,
   AlertCircle,
+  Crop,
 } from "lucide-react";
 import type { PageImage } from "../types/domain";
-import { imagePipeline } from "../utils/image";
+import { imagePipeline, type RectangleRecadrage } from "../utils/image";
+import { RecadrageModal } from "./RecadrageModal";
 
 interface ImageUploaderProps {
   label: string;
@@ -34,6 +36,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [erreurValidation, setErreurValidation] = useState<string | null>(null);
+  const [pageEnRecadrage, setPageEnRecadrage] = useState<PageImage | null>(
+    null
+  );
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -70,6 +75,26 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     onPagesChange(
       pages.map((p) => (p.id === id ? imagePipeline.pivoterPage(p) : p))
     );
+  };
+
+  const handleValiderRecadrage = async (
+    recadrage: RectangleRecadrage,
+    angle: number
+  ) => {
+    if (!pageEnRecadrage) return;
+    try {
+      const pageRecadree = await imagePipeline.recadrerPage(
+        pageEnRecadrage,
+        recadrage,
+        angle
+      );
+      onPagesChange(
+        pages.map((p) => (p.id === pageRecadree.id ? pageRecadree : p))
+      );
+      setPageEnRecadrage(null);
+    } catch (err) {
+      setErreurValidation((err as Error).message);
+    }
   };
 
   const supprimerPage = (id: string) => {
@@ -215,6 +240,14 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
+                    onClick={() => setPageEnRecadrage(page)}
+                    title="Recadrer et pivoter la page"
+                    className="p-1 hover:bg-emerald-50 text-emerald-600 rounded cursor-pointer"
+                  >
+                    <Crop className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => pivoterPage(page.id)}
                     title="Faire pivoter de 90°"
                     className="p-1 hover:bg-blue-50 text-blue-600 rounded cursor-pointer"
@@ -255,6 +288,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             className="w-full text-sm rounded-lg border border-slate-200 p-2.5 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50/50"
           />
         </div>
+      )}
+
+      {/* Modale interactive de recadrage et rotation de la page */}
+      {pageEnRecadrage && (
+        <RecadrageModal
+          page={pageEnRecadrage}
+          isOpen={true}
+          onClose={() => setPageEnRecadrage(null)}
+          onValider={handleValiderRecadrage}
+        />
       )}
     </div>
   );

@@ -1,4 +1,8 @@
-import type { CanvasProcessor, OptionsPretraitement } from "./types";
+import type {
+  CanvasProcessor,
+  OptionsPretraitement,
+  RectangleRecadrage,
+} from "./types";
 
 /**
  * Charge un Blob d'image dans un élément HTMLImageElement avec gestion sécurisée de l'Object URL
@@ -86,6 +90,84 @@ export async function pivoterEtCompresserImage(
 }
 
 /**
+ * Applique un recadrage relatif [0, 1] et une rotation avant compression via un HTMLCanvasElement
+ */
+export async function recadrerEtPivoterImage(
+  blob: Blob,
+  recadrage: RectangleRecadrage,
+  angleDegres: number = 0,
+  maxDimension: number = 2048,
+  qualiteJpeg: number = 0.85
+): Promise<Blob> {
+  const img = await chargerImageElement(blob);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Impossible d'obtenir le contexte 2D du Canvas");
+
+  const angle = ((angleDegres % 360) + 360) % 360;
+  const largeurOrientee =
+    angle === 90 || angle === 270 ? img.height : img.width;
+  const hauteurOrientee =
+    angle === 90 || angle === 270 ? img.width : img.height;
+
+  // Clamping sécurisé des coordonnées relatives [0, 1]
+  const xRel = Math.max(0, Math.min(1, recadrage.x));
+  const yRel = Math.max(0, Math.min(1, recadrage.y));
+  const wRel = Math.max(0.01, Math.min(1 - xRel, recadrage.width));
+  const hRel = Math.max(0.01, Math.min(1 - yRel, recadrage.height));
+
+  const xPx = xRel * largeurOrientee;
+  const yPx = yRel * hauteurOrientee;
+  const wPx = wRel * largeurOrientee;
+  const hPx = hRel * hauteurOrientee;
+
+  let destWidth = Math.round(wPx);
+  let destHeight = Math.round(hPx);
+  if (destWidth > maxDimension || destHeight > maxDimension) {
+    const ratio = Math.min(maxDimension / destWidth, maxDimension / destHeight);
+    destWidth = Math.max(1, Math.round(destWidth * ratio));
+    destHeight = Math.max(1, Math.round(destHeight * ratio));
+  }
+
+  canvas.width = destWidth;
+  canvas.height = destHeight;
+
+  ctx.save();
+  ctx.scale(destWidth / wPx, destHeight / hPx);
+  ctx.translate(-xPx, -yPx);
+
+  if (angle === 90) {
+    ctx.translate(img.height, 0);
+    ctx.rotate((90 * Math.PI) / 180);
+  } else if (angle === 180) {
+    ctx.translate(img.width, img.height);
+    ctx.rotate((180 * Math.PI) / 180);
+  } else if (angle === 270) {
+    ctx.translate(0, img.width);
+    ctx.rotate((270 * Math.PI) / 180);
+  }
+
+  ctx.drawImage(img, 0, 0, img.width, img.height);
+  ctx.restore();
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (resultBlob) => {
+        if (resultBlob) {
+          resolve(resultBlob);
+        } else {
+          reject(
+            new Error("Échec de la compression de l'image recadrée en Blob")
+          );
+        }
+      },
+      "image/jpeg",
+      qualiteJpeg
+    );
+  });
+}
+
+/**
  * Convertit un Blob en chaîne Base64 (sans préfixe data:image/...)
  */
 export function blobVersBase64(blob: Blob): Promise<string> {
@@ -120,6 +202,23 @@ export class BrowserCanvasProcessor implements CanvasProcessor {
     );
   }
 
+  async recadrerEtPivoterImage(
+    blob: Blob,
+    recadrage: RectangleRecadrage,
+    angleDegres: number = 0,
+    options: OptionsPretraitement = {}
+  ): Promise<Blob> {
+    const maxDimension = options.maxDimension ?? 2048;
+    const qualiteJpeg = options.qualiteJpeg ?? 0.85;
+    return recadrerEtPivoterImage(
+      blob,
+      recadrage,
+      angleDegres,
+      maxDimension,
+      qualiteJpeg
+    );
+  }
+
   async blobVersBase64(blob: Blob): Promise<string> {
     return blobVersBase64(blob);
   }
@@ -143,6 +242,13 @@ export class MockCanvasProcessor implements CanvasProcessor {
     options?: OptionsPretraitement;
   }> = [];
 
+  readonly appelsRecadrerEtPivoter: Array<{
+    blob: Blob;
+    recadrage: RectangleRecadrage;
+    angleDegres: number;
+    options?: OptionsPretraitement;
+  }> = [];
+
   readonly appelsBase64: Blob[] = [];
 
   constructor(private options: MockCanvasProcessorOptions = {}) {}
@@ -159,6 +265,27 @@ export class MockCanvasProcessor implements CanvasProcessor {
     return (
       this.options.mockBlob ??
       new Blob(["mock-image-data"], { type: "image/jpeg" })
+    );
+  }
+
+  async recadrerEtPivoterImage(
+    blob: Blob,
+    recadrage: RectangleRecadrage,
+    angleDegres: number = 0,
+    options?: OptionsPretraitement
+  ): Promise<Blob> {
+    if (this.options.simulerErreurTraitement) {
+      throw new Error("Erreur simulée lors du traitement Canvas");
+    }
+    this.appelsRecadrerEtPivoter.push({
+      blob,
+      recadrage,
+      angleDegres,
+      options,
+    });
+    return (
+      this.options.mockBlob ??
+      new Blob(["mock-cropped-image-data"], { type: "image/jpeg" })
     );
   }
 

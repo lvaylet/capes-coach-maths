@@ -5,6 +5,7 @@ import {
   type ImageIngestionPipeline,
   type ImagePrepareeApi,
   type OptionsPretraitement,
+  type RectangleRecadrage,
   type ResultatValidationFichier,
   type TypeMimeImageAccepte,
 } from "./types";
@@ -118,6 +119,40 @@ export class DefaultImageIngestionPipeline implements ImageIngestionPipeline {
     return {
       ...page,
       rotation,
+    };
+  }
+
+  /**
+   * Recadre une page selon un rectangle relatif [0, 1] et applique une rotation.
+   * Révoque l'ancien previewUrl, alloue une nouvelle URL et réinitialise l'angle à 0.
+   */
+  async recadrerPage(
+    page: PageImage,
+    recadrage: RectangleRecadrage,
+    nouvelAngle?: number,
+    options?: OptionsPretraitement
+  ): Promise<PageImage> {
+    const angle = nouvelAngle !== undefined ? nouvelAngle : page.rotation;
+    const blobTraite = await this.canvasProcessor.recadrerEtPivoterImage(
+      page.blob,
+      recadrage,
+      angle,
+      options
+    );
+
+    // Libération de l'ancienne URL d'aperçu pour éviter les fuites mémoire
+    this.libererPage(page);
+
+    const previewUrl =
+      typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+        ? URL.createObjectURL(blobTraite)
+        : `blob:${page.id}-recadree-${Date.now()}`;
+
+    return {
+      ...page,
+      blob: blobTraite,
+      previewUrl,
+      rotation: 0,
     };
   }
 

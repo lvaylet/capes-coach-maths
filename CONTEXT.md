@@ -55,3 +55,7 @@ _Avoid_: Corrigé type, solution officielle, bonne réponse
 **Domaine mathématique**:
 La branche mathématique principale de l'énoncé (Algèbre, Analyse, Géométrie, Probabilités et Statistiques, Algorithmique).
 _Avoid_: Catégorie, tag, matière
+
+**Recadrage**:
+L'action d'ajuster le cadre visuel d'une page (copie ou énoncé) afin de n'en retenir que la surface utile de rédaction et d'éliminer l'environnement hors-copie.
+_Avoid_: Retaillage, rognage, découpe, crop
