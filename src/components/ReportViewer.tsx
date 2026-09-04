@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Award,
   CheckCircle2,
@@ -8,77 +8,40 @@ import {
   Eye,
   Download,
   Share2,
-} from 'lucide-react';
-import type { RapportDeCorrection } from '../types/domain';
-import { KaTeXRenderer } from './KaTeXRenderer';
+  Copy,
+  Check,
+} from "lucide-react";
+import type { RapportDeCorrection } from "../types/domain";
+import { KaTeXRenderer } from "./KaTeXRenderer";
+import { formateurRapport } from "../rapport";
 
 interface ReportViewerProps {
   rapport: RapportDeCorrection;
   titreSession?: string;
 }
 
-type TabKey = 'verdict' | 'fond' | 'forme' | 'modele' | 'transcription';
+type TabKey = "verdict" | "fond" | "forme" | "modele" | "transcription";
 
-export const ReportViewer: React.FC<ReportViewerProps> = ({ rapport, titreSession = 'Session CAPES' }) => {
-  const [activeTab, setActiveTab] = useState<TabKey>('verdict');
+export const ReportViewer: React.FC<ReportViewerProps> = ({
+  rapport,
+  titreSession = "Session CAPES",
+}) => {
+  const [activeTab, setActiveTab] = useState<TabKey>("verdict");
+  const [copieEffectuee, setCopieEffectuee] = useState(false);
 
-  const exporterMarkdown = () => {
-    const mdContent = `# Rapport d'évaluation CAPES de Mathématiques - ${titreSession}
-Date : ${new Date(rapport.dateGeneration).toLocaleString('fr-FR')}
+  const handleExporterMarkdown = async () => {
+    await formateurRapport.telechargerMarkdown(rapport, titreSession);
+  };
 
-## Verdict
-- Note indicative : ${rapport.verdict.noteIndicative || 'Non noté'}
-- Appréciation : ${rapport.verdict.appreciationGlobale}
-
-### Points forts
-${rapport.verdict.pointsForts.map((p) => `- ${p}`).join('\n')}
-
-### Erreurs critiques
-${rapport.verdict.erreursCritiques.map((e) => `- ${e}`).join('\n')}
-
----
-
-## Analyse du Fond
-${rapport.fond.analyseDetaillee}
-
-### Théorèmes et Hypothèses
-${rapport.fond.theoremesEtHypotheses.map((t) => `- ${t}`).join('\n')}
-
-### Validité des Démonstrations
-${rapport.fond.validiteDemonstrations}
-
----
-
-## Analyse de la Forme
-${rapport.forme.analyseDetaillee}
-
-### Notations et Quantificateurs
-${rapport.forme.rigueurNotationsEtQuantificateurs}
-
-### Qualité Rédactionnelle
-${rapport.forme.qualiteRedactionnelle}
-
-### Respect des normes du Jury
-${rapport.forme.respectDesNormesDuJury}
-
----
-
-## Rédaction Modèle du Jury
-${rapport.redactionModele}
-
----
-
-## Transcription manuscrite déchiffrée
-${rapport.transcription}
-`;
-
-    const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `rapport-capes-${titreSession.toLowerCase().replace(/\s+/g, '-')}.md`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleCopierMarkdown = async () => {
+    const succes = await formateurRapport.copierDansPressePapier(
+      rapport,
+      titreSession
+    );
+    if (succes) {
+      setCopieEffectuee(true);
+      setTimeout(() => setCopieEffectuee(false), 2000);
+    }
   };
 
   return (
@@ -97,16 +60,37 @@ ${rapport.transcription}
               </span>
             )}
           </div>
-          <h2 className="text-xl font-bold mt-1 text-white">Évaluation du Jury du CAPES</h2>
+          <h2 className="text-xl font-bold mt-1 text-white">
+            Évaluation du Jury du CAPES
+          </h2>
           <p className="text-xs text-indigo-200/80 mt-0.5">
-            Généré le {new Date(rapport.dateGeneration).toLocaleString('fr-FR')}
+            Généré le {new Date(rapport.dateGeneration).toLocaleString("fr-FR")}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={exporterMarkdown}
+            onClick={handleCopierMarkdown}
+            title="Copier le rapport Markdown dans le presse-papier"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium backdrop-blur-xs transition-colors cursor-pointer"
+          >
+            {copieEffectuee ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                Copié !
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                Copier Markdown
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleExporterMarkdown}
+            title="Télécharger le fichier .md"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium backdrop-blur-xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
@@ -127,11 +111,11 @@ ${rapport.transcription}
       <div className="flex overflow-x-auto border-b border-slate-200 bg-slate-50/75 p-1 gap-1">
         <button
           type="button"
-          onClick={() => setActiveTab('verdict')}
+          onClick={() => setActiveTab("verdict")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'verdict'
-              ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/80'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            activeTab === "verdict"
+              ? "bg-white text-indigo-600 shadow-xs border border-slate-200/80"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
           }`}
         >
           <Award className="w-4 h-4" />
@@ -140,11 +124,11 @@ ${rapport.transcription}
 
         <button
           type="button"
-          onClick={() => setActiveTab('fond')}
+          onClick={() => setActiveTab("fond")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'fond'
-              ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/80'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            activeTab === "fond"
+              ? "bg-white text-indigo-600 shadow-xs border border-slate-200/80"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
           }`}
         >
           <FileCheck className="w-4 h-4" />
@@ -153,11 +137,11 @@ ${rapport.transcription}
 
         <button
           type="button"
-          onClick={() => setActiveTab('forme')}
+          onClick={() => setActiveTab("forme")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'forme'
-              ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/80'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            activeTab === "forme"
+              ? "bg-white text-indigo-600 shadow-xs border border-slate-200/80"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
           }`}
         >
           <CheckCircle2 className="w-4 h-4" />
@@ -166,11 +150,11 @@ ${rapport.transcription}
 
         <button
           type="button"
-          onClick={() => setActiveTab('modele')}
+          onClick={() => setActiveTab("modele")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'modele'
-              ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/80'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            activeTab === "modele"
+              ? "bg-white text-indigo-600 shadow-xs border border-slate-200/80"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -179,11 +163,11 @@ ${rapport.transcription}
 
         <button
           type="button"
-          onClick={() => setActiveTab('transcription')}
+          onClick={() => setActiveTab("transcription")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-            activeTab === 'transcription'
-              ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/80'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            activeTab === "transcription"
+              ? "bg-white text-indigo-600 shadow-xs border border-slate-200/80"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
           }`}
         >
           <Eye className="w-4 h-4" />
@@ -194,7 +178,7 @@ ${rapport.transcription}
       {/* Contenu de l'onglet actif */}
       <div className="p-6">
         {/* Onglet 1: Verdict */}
-        {activeTab === 'verdict' && (
+        {activeTab === "verdict" && (
           <div className="space-y-6">
             <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-5">
               <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide mb-2">
@@ -215,14 +199,19 @@ ${rapport.transcription}
                 {rapport.verdict.pointsForts.length > 0 ? (
                   <ul className="space-y-2">
                     {rapport.verdict.pointsForts.map((pt, idx) => (
-                      <li key={idx} className="text-xs sm:text-sm text-slate-700 flex items-start gap-2">
+                      <li
+                        key={idx}
+                        className="text-xs sm:text-sm text-slate-700 flex items-start gap-2"
+                      >
                         <span className="text-emerald-500 font-bold">•</span>
                         <span>{pt}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-slate-500 italic">Aucun point fort spécifique relevé.</p>
+                  <p className="text-xs text-slate-500 italic">
+                    Aucun point fort spécifique relevé.
+                  </p>
                 )}
               </div>
 
@@ -235,14 +224,19 @@ ${rapport.transcription}
                 {rapport.verdict.erreursCritiques.length > 0 ? (
                   <ul className="space-y-2">
                     {rapport.verdict.erreursCritiques.map((err, idx) => (
-                      <li key={idx} className="text-xs sm:text-sm text-slate-700 flex items-start gap-2">
+                      <li
+                        key={idx}
+                        className="text-xs sm:text-sm text-slate-700 flex items-start gap-2"
+                      >
                         <span className="text-rose-500 font-bold">•</span>
                         <span>{err}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-slate-500 italic">Aucune erreur critique majeure constatée.</p>
+                  <p className="text-xs text-slate-500 italic">
+                    Aucune erreur critique majeure constatée.
+                  </p>
                 )}
               </div>
             </div>
@@ -250,10 +244,12 @@ ${rapport.transcription}
         )}
 
         {/* Onglet 2: Fond */}
-        {activeTab === 'fond' && (
+        {activeTab === "fond" && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Validité mathématique approfondie</h3>
+              <h3 className="text-base font-bold text-slate-900 mb-2">
+                Validité mathématique approfondie
+              </h3>
               <div className="bg-slate-50 rounded-xl p-5 border border-slate-200/80">
                 <KaTeXRenderer content={rapport.fond.analyseDetaillee} />
               </div>
@@ -267,7 +263,10 @@ ${rapport.transcription}
                 <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4">
                   <ul className="space-y-2">
                     {rapport.fond.theoremesEtHypotheses.map((item, idx) => (
-                      <li key={idx} className="text-xs sm:text-sm text-slate-700 flex items-start gap-2">
+                      <li
+                        key={idx}
+                        className="text-xs sm:text-sm text-slate-700 flex items-start gap-2"
+                      >
                         <span className="text-amber-600 font-bold">▶</span>
                         <KaTeXRenderer content={item} />
                       </li>
@@ -278,7 +277,9 @@ ${rapport.transcription}
             )}
 
             <div>
-              <h4 className="text-sm font-bold text-slate-800 mb-2">Solidité de l'enchaînement logique</h4>
+              <h4 className="text-sm font-bold text-slate-800 mb-2">
+                Solidité de l'enchaînement logique
+              </h4>
               <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-4 leading-relaxed">
                 {rapport.fond.validiteDemonstrations}
               </p>
@@ -287,10 +288,12 @@ ${rapport.transcription}
         )}
 
         {/* Onglet 3: Forme */}
-        {activeTab === 'forme' && (
+        {activeTab === "forme" && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Rigueur d'exposition et style rédactionnel</h3>
+              <h3 className="text-base font-bold text-slate-900 mb-2">
+                Rigueur d'exposition et style rédactionnel
+              </h3>
               <div className="bg-slate-50 rounded-xl p-5 border border-slate-200/80">
                 <KaTeXRenderer content={rapport.forme.analyseDetaillee} />
               </div>
@@ -302,7 +305,9 @@ ${rapport.transcription}
                   Quantificateurs & Définition des variables
                 </h4>
                 <div className="text-sm text-slate-700 leading-relaxed">
-                  <KaTeXRenderer content={rapport.forme.rigueurNotationsEtQuantificateurs} />
+                  <KaTeXRenderer
+                    content={rapport.forme.rigueurNotationsEtQuantificateurs}
+                  />
                 </div>
               </div>
 
@@ -311,7 +316,9 @@ ${rapport.transcription}
                   Phraséologie française vs Connecteurs
                 </h4>
                 <div className="text-sm text-slate-700 leading-relaxed">
-                  <KaTeXRenderer content={rapport.forme.qualiteRedactionnelle} />
+                  <KaTeXRenderer
+                    content={rapport.forme.qualiteRedactionnelle}
+                  />
                 </div>
               </div>
             </div>
@@ -328,37 +335,47 @@ ${rapport.transcription}
         )}
 
         {/* Onglet 4: Rédaction Modèle */}
-        {activeTab === 'modele' && (
+        {activeTab === "modele" && (
           <div className="space-y-4">
             <div className="border-l-4 border-indigo-600 pl-4 py-1">
               <h3 className="text-base font-bold text-slate-900">
                 Proposition de Démonstration Exemplaire
               </h3>
               <p className="text-xs text-slate-500">
-                Rédigée selon les standards attendus pour une copie de concours (clarté, aération, justification complète).
+                Rédigée selon les standards attendus pour une copie de concours
+                (clarté, aération, justification complète).
               </p>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-6 border border-slate-200/80 shadow-inner font-serif">
-              <KaTeXRenderer content={rapport.redactionModele} className="text-slate-800 text-sm sm:text-base" />
+              <KaTeXRenderer
+                content={rapport.redactionModele}
+                className="text-slate-800 text-sm sm:text-base"
+              />
             </div>
           </div>
         )}
 
         {/* Onglet 5: Transcription OCR */}
-        {activeTab === 'transcription' && (
+        {activeTab === "transcription" && (
           <div className="space-y-4">
             <div className="border-l-4 border-slate-400 pl-4 py-1">
               <h3 className="text-base font-bold text-slate-900">
                 Lecture déchiffrée par l'Examinateur
               </h3>
               <p className="text-xs text-slate-500">
-                Consultez cette transcription pour vous assurer que le jury n'a pas mal interprété votre écriture manuscrite.
+                Consultez cette transcription pour vous assurer que le jury n'a
+                pas mal interprété votre écriture manuscrite.
               </p>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 text-sm font-mono text-slate-800 whitespace-pre-wrap">
-              <KaTeXRenderer content={rapport.transcription || 'Aucune transcription textuelle disponible.'} />
+              <KaTeXRenderer
+                content={
+                  rapport.transcription ||
+                  "Aucune transcription textuelle disponible."
+                }
+              />
             </div>
           </div>
         )}
