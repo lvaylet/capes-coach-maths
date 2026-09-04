@@ -184,9 +184,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide mb-2">
                 Bilan général de l'examinateur
               </h3>
-              <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
-                {rapport.verdict.appreciationGlobale}
-              </p>
+              <KaTeXRenderer
+                content={rapport.verdict.appreciationGlobale}
+                className="text-slate-700 text-sm sm:text-base"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -204,7 +205,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
                         className="text-xs sm:text-sm text-slate-700 flex items-start gap-2"
                       >
                         <span className="text-emerald-500 font-bold">•</span>
-                        <span>{pt}</span>
+                        <KaTeXRenderer content={pt} className="flex-1" />
                       </li>
                     ))}
                   </ul>
@@ -229,7 +230,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
                         className="text-xs sm:text-sm text-slate-700 flex items-start gap-2"
                       >
                         <span className="text-rose-500 font-bold">•</span>
-                        <span>{err}</span>
+                        <KaTeXRenderer content={err} className="flex-1" />
                       </li>
                     ))}
                   </ul>
@@ -280,9 +281,12 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               <h4 className="text-sm font-bold text-slate-800 mb-2">
                 Solidité de l'enchaînement logique
               </h4>
-              <p className="text-sm text-slate-700 bg-white border border-slate-200 rounded-lg p-4 leading-relaxed">
-                {rapport.fond.validiteDemonstrations}
-              </p>
+              <div className="bg-white border border-slate-200 rounded-lg p-4">
+                <KaTeXRenderer
+                  content={rapport.fond.validiteDemonstrations}
+                  className="text-sm text-slate-700"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -327,9 +331,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               <h4 className="text-xs font-bold uppercase tracking-wider text-blue-800 mb-1.5">
                 Conformité aux attentes spécifiques du Jury du CAPES
               </h4>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                {rapport.forme.respectDesNormesDuJury}
-              </p>
+              <KaTeXRenderer
+                content={rapport.forme.respectDesNormesDuJury}
+                className="text-xs sm:text-sm text-slate-700"
+              />
             </div>
           </div>
         )}
