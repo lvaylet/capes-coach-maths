@@ -13,7 +13,11 @@ import type {
   DomaineMathematique,
   Epreuve,
 } from "./types/domain";
-import { creerExaminateur, type ExaminateurJury } from "./services/examinateur";
+import {
+  creerExaminateur,
+  useModelesExaminateur,
+  type ExaminateurJury,
+} from "./services/examinateur";
 import { useSessionDEntrainement } from "./session";
 import { ImageUploader } from "./components/ImageUploader";
 import { ReportViewer } from "./components/ReportViewer";
@@ -25,6 +29,9 @@ import { useParametresCandidat } from "./parametres";
 export const App: React.FC = () => {
   // Paramètres du candidat (clé API, modèle, consignes) gérés par le seam ParametresRepository
   const { parametres, mettreAJourParametres } = useParametresCandidat();
+
+  // Modèles Gemini disponibles (synchronisés avec la clé API ou par défaut)
+  const { modeles } = useModelesExaminateur(parametres.cleApiGemini);
 
   // Instance de l'examinateur du jury (seam Ports & Adapters)
   const examinateur: ExaminateurJury = useMemo(
@@ -153,7 +160,7 @@ export const App: React.FC = () => {
         {/* Formulaire de saisie : Énoncé & Copie */}
         <section className="space-y-4">
           {/* Métadonnées de l'exercice */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
                 Intitulé de la session
@@ -207,6 +214,46 @@ export const App: React.FC = () => {
                 <option value="auto">
                   Détection automatique selon l'énoncé
                 </option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center justify-between">
+                <span>Modèle de l'examinateur</span>
+              </label>
+              <select
+                value={parametres.modeleGemini}
+                onChange={(e) =>
+                  mettreAJourParametres({
+                    ...parametres,
+                    modeleGemini: e.target.value,
+                  })
+                }
+                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer font-mono"
+              >
+                <optgroup label="Modèles recommandés">
+                  {modeles
+                    .filter((m) => m.estRecommande)
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        ★ {m.nomAffiche}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Autres modèles">
+                  {modeles
+                    .filter((m) => !m.estRecommande)
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nomAffiche}
+                      </option>
+                    ))}
+                </optgroup>
+                {!modeles.some((m) => m.id === parametres.modeleGemini) && (
+                  <option value={parametres.modeleGemini}>
+                    {parametres.modeleGemini} (personnalisé)
+                  </option>
+                )}
               </select>
             </div>
           </div>

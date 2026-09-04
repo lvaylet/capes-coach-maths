@@ -59,3 +59,7 @@ _Avoid_: Catégorie, tag, matière
 **Recadrage**:
 L'action d'ajuster le cadre visuel d'une page (copie ou énoncé) afin de n'en retenir que la surface utile de rédaction et d'éliminer l'environnement hors-copie.
 _Avoid_: Retaillage, rognage, découpe, crop
+
+**Modèle de l'examinateur**:
+La version spécifique du modèle multimodal d'évaluation (famille Gemini) sélectionnée pour animer l'examinateur lors de la notation et de la remédiation.
+_Avoid_: LLM, bot, moteur IA, IA choisie, version GPT

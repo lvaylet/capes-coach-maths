@@ -3,6 +3,7 @@ import { FakeExaminateurAdapter } from "./fakeAdapter";
 import { GeminiExaminateurAdapter } from "./geminiAdapter";
 
 export * from "./types";
+export * from "./modeles";
 export { FakeExaminateurAdapter, FIXTURE_RAPPORT_SIMULE } from "./fakeAdapter";
 export { GeminiExaminateurAdapter } from "./geminiAdapter";
 export {
