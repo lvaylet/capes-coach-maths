@@ -22,12 +22,12 @@ export interface StoredSessionRecord {
   messagesRemediation: any[];
 }
 
-export class MathsAssistantDatabase extends Dexie {
+export class CapesCoachMathsDatabase extends Dexie {
   sessions!: Table<StoredSessionRecord, string>;
   images!: Table<StoredImageRecord, string>;
 
   constructor() {
-    super('MathsAssistantDB');
+    super('CapesCoachMathsDB');
     this.version(1).stores({
       sessions: 'id, dateCreation, domaine, epreuve',
       images: 'id, sessionId, typeDoc, ordre',
@@ -35,7 +35,7 @@ export class MathsAssistantDatabase extends Dexie {
   }
 }
 
-export const db = new MathsAssistantDatabase();
+export const db = new CapesCoachMathsDatabase();
 
 /**
  * Sauvegarde une session complète avec ses images dans IndexedDB

@@ -86,7 +86,8 @@ L'ingénierie de prompt s'appuie directement sur les attendus des **rapports off
 
 ```bash
 # Cloner le dépôt ou se placer dans le répertoire
-cd maths-assistant
+git clone git@github.com:lvaylet/capes-coach-maths.git
+cd capes-coach-maths
 
 # Installer les dépendances
 npm install
@@ -126,7 +127,7 @@ L'application s'ouvre localement sur `http://localhost:5173`.
 ## Structure du Projet
 
 ```text
-maths-assistant/
+capes-coach-maths/
 ├── index.html                  # Point d'entrée HTML
 ├── package.json                # Dépendances et scripts
 ├── tsconfig.json               # Configuration TypeScript strict
@@ -140,7 +141,7 @@ maths-assistant/
 │       ├── issue-tracker.md
 │       └── triage-labels.md
 ├── .scratch/                   # Spécification et tickets de suivi
-│   └── capes-maths-assistant/
+│   └── capes-coach-maths/
 │       ├── spec.md
 │       └── issues/
 ├── src/

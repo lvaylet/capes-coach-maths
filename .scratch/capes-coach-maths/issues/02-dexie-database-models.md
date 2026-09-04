@@ -14,6 +14,6 @@ Implémenter la couche de données locale basée sur Dexie.js pour stocker les s
 
 ## Comments
 
-- Schéma `MathsAssistantDB` implémenté dans `src/db/db.ts` avec support des Blobs d'images volumineux.
+- Schéma `CapesCoachMathsDB` implémenté dans `src/db/db.ts` avec support des Blobs d'images volumineux.
 - Fonctions `sauvegarderSession`, `chargerSession`, `listerSessions` et `supprimerSession` opérationnelles.
 - Tests unitaires validés dans `src/db/db.test.ts`.
